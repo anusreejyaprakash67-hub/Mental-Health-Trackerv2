@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Your Results</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Chart.js CDN (used for animated client-side chart) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container wide">
+    <h1>Your DASS-21 Results</h1>
+
+    <div class="chart-wrap">
+      <canvas id="resultChart" height="160"></canvas>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Depression</h3>
+        <p class="big">{{ dep_score }}</p>
+        <p class="sev">{{ dep_sev }}</p>
+        <p class="advice"><strong>Advice:</strong> {{ dep_advice }}</p>
+      </div>
+
+      <div class="card">
+        <h3>Anxiety</h3>
+        <p class="big">{{ anx_score }}</p>
+        <p class="sev">{{ anx_sev }}</p>
+        <p class="advice"><strong>Advice:</strong> {{ anx_advice }}</p>
+      </div>
+
+      <div class="card">
+        <h3>Stress</h3>
+        <p class="big">{{ str_score }}</p>
+        <p class="sev">{{ str_sev }}</p>
+        <p class="advice"><strong>Advice:</strong> {{ str_advice }}</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" href="{{ url_for('home') }}">Retake Test</a>
+    </div>
+  </div>
+
+<script>
+  // chart data passed from Flask
+  const labels = {{ chart_data.labels | tojson }};
+  const values = {{ chart_data.values | tojson }};
+
+  // create animated bar chart
+  const ctx = document.getElementById('resultChart').getContext('2d');
+
+  const data = {
+    labels: labels,
+    datasets: [{
+      label: 'DASS-21 Scores',
+      data: values,
+      borderWidth: 1,
+      backgroundColor: [
+        'rgba(0,0,0,0.08)',
+        'rgba(0,0,0,0.08)',
+        'rgba(0,0,0,0.08)'
+      ],
+      // hover/background visuals will be determined by Chart.js defaults
+    }]
+  };
+
+  const config = {
+    type: 'bar',
+    data: data,
+    options: {
+      animation: {
+        duration: 1200,
+        easing: 'easeOutQuart'
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...values, 30)
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      }
+    }
+  };
+
+  // instantiate chart
+  const resultChart = new Chart(ctx, config);
+
+  // small visual polish: set different colors based on severity (client-side)
+  const severities = [ "{{ dep_sev }}", "{{ anx_sev }}", "{{ str_sev }}" ];
+  const colorMap = {
+    "Normal": "rgba(75, 192, 192, 0.6)",
+    "Mild": "rgba(255, 205, 86, 0.6)",
+    "Moderate": "rgba(255, 159, 64, 0.6)",
+    "Severe": "rgba(255, 99, 132, 0.6)",
+    "Extremely Severe": "rgba(153, 102, 255, 0.6)"
+  };
+
+  // update bars colors based on severity mapping
+  resultChart.data.datasets[0].backgroundColor = severities.map(s => colorMap[s] || 'rgba(120,120,120,0.6)');
+  resultChart.update();
+</script>
+</body>
+</html>
